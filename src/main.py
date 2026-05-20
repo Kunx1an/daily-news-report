@@ -21,6 +21,9 @@ from coze_coding_utils.log.config import LOG_LEVEL
 from coze_coding_utils.error.classifier import ErrorClassifier, classify_error
 from coze_coding_utils.helper.stream_runner import AgentStreamRunner, WorkflowStreamRunner,agent_stream_handler,workflow_stream_handler, RunOpt
 
+# 定时任务调度器
+from scheduler import start_scheduler, stop_scheduler, get_scheduler_status
+
 setup_logging(
     log_file=LOG_FILE,
     max_bytes=100 * 1024 * 1024, # 100MB
@@ -238,6 +241,49 @@ app = FastAPI()
 
 # OpenAI 兼容接口处理器
 openai_handler = OpenAIChatHandler(service)
+
+
+# ==================== 定时任务调度器生命周期管理 ====================
+@app.on_event("startup")
+async def startup_event():
+    """应用启动时启动定时调度器"""
+    logger.info("🚀 应用启动中...")
+    try:
+        start_scheduler()
+        logger.info("✅ 定时调度器启动成功")
+    except Exception as e:
+        logger.error(f"❌ 定时调度器启动失败: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """应用关闭时停止定时调度器"""
+    logger.info("⏹️ 应用关闭中...")
+    try:
+        stop_scheduler()
+        logger.info("✅ 定时调度器已停止")
+    except Exception as e:
+        logger.error(f"❌ 定时调度器停止失败: {e}")
+
+
+@app.get("/scheduler/status")
+async def scheduler_status():
+    """查看定时调度器状态"""
+    try:
+        status = get_scheduler_status()
+        return {
+            "code": 0,
+            "message": "success",
+            "data": status
+        }
+    except Exception as e:
+        logger.error(f"获取调度器状态失败: {e}")
+        return {
+            "code": 500,
+            "message": str(e),
+            "data": None
+        }
+# ==================== 定时任务调度器生命周期管理结束 ====================
 
 
 HEADER_X_RUN_ID = "x-run-id"
