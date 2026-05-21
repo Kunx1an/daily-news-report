@@ -4,6 +4,7 @@ import json
 import threading
 import traceback
 import logging
+from datetime import datetime
 from typing import Any, Dict, Iterable, AsyncIterable, AsyncGenerator, Optional
 import cozeloop
 import uvicorn
@@ -520,6 +521,54 @@ async def health_check():
         }
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
+
+
+@app.post("/trigger/daily_report")
+async def trigger_daily_report(request: Request):
+    """
+    触发每日资讯日报推送
+    
+    用于外部定时服务调用（如云函数 Cron、GitHub Actions 等）
+    
+    调用方式：
+    - POST /trigger/daily_report
+    - 无需请求体
+    
+    返回：
+    - 执行结果和状态
+    """
+    ctx = new_context(method="trigger_daily_report", headers=request.headers)
+    request_context.set(ctx)
+    
+    logger.info(f"📥 收到日报触发请求: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    
+    try:
+        # 导入触发函数
+        from trigger_daily_report import run_daily_report
+        
+        # 执行日报推送
+        result = await run_daily_report()
+        
+        logger.info(f"✅ 日报触发执行完成: {result.get('status')}")
+        
+        return {
+            "code": 0,
+            "message": "success" if result.get("status") == "success" else "failed",
+            "data": result
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ 日报触发执行失败: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        
+        return {
+            "code": 500,
+            "message": str(e),
+            "data": None
+        }
+    finally:
+        cozeloop.flush()
 
 
 @app.get(path="/graph_parameter")
