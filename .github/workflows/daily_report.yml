@@ -16,10 +16,10 @@ jobs:
           echo "📅 开始触发每日资讯日报推送..."
           echo "⏰ 触发时间: $(date '+%Y-%m-%d %H:%M:%S')"
           
-          # 触发日报推送
+          # 触发日报推送（服务地址已配置）
           response=$(curl -s -X POST \
             -H "Content-Type: application/json" \
-            "${{ secrets.COZE_SERVICE_URL }}/trigger/daily_report")
+            "https://e6c910b2-d7e8-4c90-9574-84a3dc35290b.dev.coze.site/trigger/daily_report")
           
           echo "📡 响应结果:"
           echo "$response"
