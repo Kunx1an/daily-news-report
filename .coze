@@ -12,3 +12,9 @@ deps = ["git"] # -> apt install git
 build = ["bash", "scripts/setup.sh"]
 run = ["bash", "scripts/http_run.sh", "-p 5000"]
 deps = ["git"] # -> apt install git
+
+# 定时触发配置：每天早上 9 点（北京时间）自动触发日报推送
+[triggers]
+# Cron 表达式：秒 分 时 日 月 周
+# "0 0 9 * * *" = 每天 9:00:00 (UTC+8 北京时间)
+schedule = [{cron = "0 0 9 * * *", endpoint = "/trigger/daily_report", method = "POST"}]
